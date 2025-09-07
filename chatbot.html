@@ -17,12 +17,20 @@
         function ChatInput({ chatMessages, setChatMessages }){
 
             const [ inputText, setInputText ] = React.useState('');
+            const [ isLoading, setIsLoading ] = React.useState(false);
 
             function saveInputText(event){
                 setInputText(event.target.value);
             }
 
-            function sendMessageToChatbot(){
+            async function  sendMessageToChatbot(){
+
+                if(isLoading || inputText === ''){
+                    return;
+                }
+                setIsLoading(true);
+
+                setInputText('');
 
                 const newChatMessages = [
                     ...chatMessages,
@@ -35,8 +43,17 @@
 
                 setChatMessages(newChatMessages);
                 
+                setChatMessages([
+                    ...newChatMessages,
+                    {
+                        message: 'Loading...',
+                        sender: 'robot',
+                        id: crypto.randomUUID()
+                    }
+                ]);
 
-                const response = Chatbot.getResponse(inputText);
+                const response = await Chatbot.getResponseAsync(inputText);
+                
                 setChatMessages([
                     ...newChatMessages,
                     {
@@ -45,6 +62,8 @@
                         id: crypto.randomUUID()
                     }
                 ]);
+
+                setIsLoading(false);
 
                 setInputText('');
             }
@@ -55,6 +74,13 @@
                         placeholder="Send a message to Chatbot" 
                         size="30" 
                         onChange={saveInputText}
+                        onKeyDown={(event) => {
+                            if(event.key === 'Enter'){
+                                sendMessageToChatbot();
+                            } else if (event.key === 'Escape'){
+                                setInputText('');
+                            }
+                        }}
                         value={inputText}
                     />
                     <button onClick={sendMessageToChatbot}>Send</button>
